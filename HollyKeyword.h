@@ -24,7 +24,7 @@ enum KeywordId {
     OperatorKeyword_structaccess,
     OperatorKeyword_exprbegin,
     OperatorKeyword_exprend,
-    OperatorKeyword_add,
+    OperatorKeyword_plus,
     OperatorKeyword_minus,
     OperatorKeyword_star,
     OperatorKeyword_divide,
@@ -62,4 +62,4 @@ struct ConstKeyword {
 extern ConstKeyword __reservedHollyKeywords[];
 extern ConstKeyword __reservedHollyOperators[];
 extern ConstKeyword __hollyEnumeratorNames[];
-ConstKeyword *findHollyKeyword(const char *enumeratorName);
+int findHollyKeyword(const char *enumeratorName);

@@ -4,155 +4,60 @@
 #include <vector>
 #include <algorithm>
 #include <optional>
+#include <iostream>
 
 #include "Lexer.h"
 
 #include "HollyLanguage.h"
 
-struct ParserFragmentRule {
-private:
-public:
-};
+#include "Parser.h"
 
-struct ParserRule {
-private:
-    std::string name;
-    std::vector<std::string> syntax;
-    friend struct Parser;
-public:
-    void setName(const std::string& name);
-    void addSyntax(const std::string& syntax);
-};
+void debug(ParseTree *tree, int depth = 0) {
+    if (tree == nullptr)
+        return;
 
-void ParserRule::setName(const std::string& name) {
-    this->name = name;
-}
+    for (int i = 0; i < depth; i++)
+        printf("\t");
 
-void ParserRule::addSyntax(const std::string& syntax) {
-    this->syntax.push_back(syntax);
-}
-
-struct Parser {
-private:
-    std::vector<ParserRule *> rules;
-public:
-    Parser();
-    void addRule(ParserRule *r);
-    ParserRule *findRule(const std::string& rule);
-    bool runRule(const std::string& rule, Lexer *l);
-};
-
-Parser::Parser() {
-}
-
-void Parser::addRule(ParserRule *r) {
-    rules.push_back(r);
-}
-
-ParserRule *Parser::findRule(const std::string& rule) {
-    for (auto& i : rules)
-        if (i->name == rule)
-            return i;
-    return nullptr;
-}
-
-bool Parser::runRule(const std::string& rule_, Lexer *l) {
-    ParserRule *rule = findRule(rule_);
-    Lexer grammarLexer;
-    grammarLexer.enableWhitespaceSkip();
-    grammarLexer.assignConstantToken("E", 2);
-    grammarLexer.assignVariableToken("@[a-zA-Z0-9_-_]*", 0, 0);
-    grammarLexer.assignVariableToken("[a-zA-Z0-9_-_]*", 1, 0);
-    printf("running %s\n", rule_.c_str());
-
-    const char *buf = nullptr;
-    bool state = false;
-    for (auto& i : rule->syntax) {
-        grammarLexer.setBuffer(i.c_str());
-        Token *t = nullptr;
-        while (true) {
-            t = grammarLexer.fetchToken();
-            if (!t)
-                break;
-            
-            switch (t->id) {
-            case 0:
-                buf = l->getBuffer();
-                switch (auto id = findHollyKeyword(t->token.c_str() + 1)->id) {
-                case Keyword_Integer:
-                    t = l->fetchToken();                    
-                    if (t && id == t->id) {
-                        return true;
-                    }
-                    break;
-                case OperatorKeyword_add:
-                case OperatorKeyword_star:
-                case OperatorKeyword_exprbegin:
-                case OperatorKeyword_exprend:
-                    t = l->fetchToken();
-                    if (t && id == t->id) {
-                        state = true;
-                        continue;
-                    }
-                    l->rewindTo(buf);
-                    return false;
-                default:
-                    printf("WTF %s\n", t->token.c_str());
-                    std::exit(0);
-                }
-
-                l->rewindTo(buf);
-                break;
-            case 2:
-                printf("hallo\n");
-                break;
-            case 1:
-                runRule(t->token, l);
-                break;
-            }
-        }
-
-        if (state)
-            return true;
+    printf("%s%s\n", tree->production.c_str(), tree->terminal ? (" (" + tree->terminal->token + ")").c_str() : "");
+    for (ParseTree *c : tree->children) {
+        debug(c, depth + 1);
     }
-    return false;
 }
 
 int main() {
     Lexer l;
     Parser p;
     ParserRule exprRule;
-    ParserRule termListRule;
-    ParserRule termRule;
-    ParserRule factorRule;
-    ParserRule factorListRule;
+    ParserRule termList;
+    ParserRule term;
+    ParserRule factor;
+    ParserRule factorList;
     InitializeLexerForHolly(&l);
-
     exprRule.setName("expr");
-    exprRule.addSyntax("term termList");
-    termListRule.setName("termList");
-    //termListRule.addSyntax("@OperatorKeyword_minus term termList");
-    termListRule.addSyntax("@OperatorKeyword_add term termList");
-    termListRule.addSyntax("E");
-    termRule.setName("term");
-    termRule.addSyntax("factor factorList");
-    factorRule.setName("factor");
-    factorRule.addSyntax("@Keyword_Integer");
-    factorRule.addSyntax("@OperatorKeyword_exprbegin expr @OperatorKeyword_exprend");
-    factorListRule.setName("factorList");
-    factorListRule.addSyntax("@OperatorKeyword_star factor factorList");
-    factorListRule.addSyntax("E");
+    exprRule.addSyntax({ "#term", "termList" });
 
+    termList.setName("termList");
+    termList.addSyntax({ "@OperatorKeyword_plus", "#term", "termList" });
+    termList.addSyntax({ "@OperatorKeyword_minus", "#term", "termList" });
+    termList.addSyntax({ "E" });
+    term.setName("term");
+    term.addSyntax({ "factor", "factorList" });
+    factorList.setName("factorList");
+    factorList.addSyntax({ "@OperatorKeyword_star", "factor", "factorList" });
+    factorList.addSyntax({ "E" });
+    factor.setName("factor");
+    factor.addSyntax({ "@Keyword_Integer" });
+    factor.addSyntax({ "@OperatorKeyword_exprbegin", "expr", "@OperatorKeyword_exprend" });
+    p.addRule(&termList);
+    p.addRule(&term);
+    p.addRule(&factor);
+    p.addRule(&factorList);
     p.addRule(&exprRule);
-    p.addRule(&termListRule);
-    p.addRule(&termRule);
-    p.addRule(&factorRule);
-    p.addRule(&factorListRule);
 
-    l.setBuffer("1+1*(4*4)");
-
-    //expr->term->factor->1->factorList->none->termList->+term->factor->2->factorList->none->termList->none
-
-    p.runRule("expr", &l);
+    l.setBuffer("+++1 + 1");
+    p.setKeywordCallback(findHollyKeyword);
+    ParseTree *t = p.parse("expr", &l);
+    debug(t);
     return 0;
 }

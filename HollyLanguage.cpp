@@ -21,7 +21,7 @@ static ConstKeyword __reservedHollyOperators[] = {
     { ".", OperatorKeyword_structaccess, },
     { "(", OperatorKeyword_exprbegin, },
     { ")", OperatorKeyword_exprend, },
-    { "+", OperatorKeyword_add, },
+    { "+", OperatorKeyword_plus, },
     { "-", OperatorKeyword_minus, },
     { "*", OperatorKeyword_star, },
     { "/", OperatorKeyword_divide, },
@@ -75,7 +75,7 @@ ConstKeyword __hollyEnumeratorNames[] = {
     { "OperatorKeyword_structaccess", OperatorKeyword_structaccess },
     { "OperatorKeyword_exprbegin", OperatorKeyword_exprbegin },
     { "OperatorKeyword_exprend", OperatorKeyword_exprend },
-    { "OperatorKeyword_add", OperatorKeyword_add },
+    { "OperatorKeyword_plus", OperatorKeyword_plus },
     { "OperatorKeyword_minus", OperatorKeyword_minus },
     { "OperatorKeyword_star", OperatorKeyword_star },
     { "OperatorKeyword_divide", OperatorKeyword_divide },
@@ -105,11 +105,11 @@ ConstKeyword __hollyEnumeratorNames[] = {
     { "OperatorKeyword_endstmt", OperatorKeyword_endstmt },
 };
 
-ConstKeyword *findHollyKeyword(const char *enumeratorName) {
+int findHollyKeyword(const char *enumeratorName) {
     for (auto& i : __hollyEnumeratorNames)
         if (!strcmp(i.keyword, enumeratorName))
-            return &i;
-    return nullptr;
+            return i.id;
+    return -1;
 }
 
 void InitializeLexerForHolly(Lexer *lexer) {
