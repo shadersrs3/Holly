@@ -1,0 +1,68 @@
+; extra bullshit grammar
+
+
+TypeCast 2
+@OperatorKeyword_exprbegin Type PtrCast @OperatorKeyword_exprend
+@OperatorKeyword_exprbegin Type @OperatorKeyword_exprend
+
+PtrCast 2
+@OperatorKeyword_star PtrCast
+E
+
+DeclaratorSuffix 3
+@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend DeclaratorSuffix
+@OperatorKeyword_bracketstart Expr @OperatorKeyword_bracketend DeclaratorSuffix
+E
+
+Declarator 2
+Identifier DeclaratorSuffix
+@OperatorKeyword_star Declarator
+
+Identifier 3
+Name
+@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend
+TypeCast Expr
+
+Name 7
+@Keyword_Name
+@Keyword_Octal
+@Keyword_Integer
+@Keyword_Hexadecimal
+@Keyword_FloatingPoint
+@Keyword_Multicharacter
+@Keyword_Singlecharacter
+
+Type 10
+@ConstKeyword_int8
+@ConstKeyword_int16
+@ConstKeyword_int32
+@ConstKeyword_int64
+@ConstKeyword_uint8
+@ConstKeyword_uint16
+@ConstKeyword_uint32
+@ConstKeyword_uint64
+@ConstKeyword_void
+@Keyword_Name
+
+Declaration 2
+Type Declarator @OperatorKeyword_statementstart @OperatorKeyword_statementend
+Type Declarator @OperatorKeyword_endstmt
+
+Expr 1
+#Term TermList
+
+Term 1
+Factor FactorList
+
+TermList 3
+@OperatorKeyword_plus #Term TermList
+@OperatorKeyword_minus #Term TermList
+E
+
+Factor 2
+Declarator
+@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend
+
+FactorList 2
+@OperatorKeyword_star Factor FactorList
+E

@@ -113,7 +113,7 @@ int findHollyKeyword(const char *enumeratorName) {
 }
 
 void InitializeLexerForHolly(Lexer *lexer) {
-    lexer->assignVariableToken("[a-zA-Z_-_][_a-zA-Z0-9]*?", Keyword_Name, 0);
+    lexer->assignVariableToken("[a-zA-Z_-_][_a-zA-Z0-9_-_]*?", Keyword_Name, 0);
     lexer->assignVariableToken("[0-9][0-9]*?.[0-9]*?[a-zA-Z]*?", Keyword_FloatingPoint, 0);
     lexer->assignVariableToken("0x[0-9a-fA-F]*[a-zA-Z]*?", Keyword_Hexadecimal, 0);
     lexer->assignVariableToken("0[0-7]*[0-9a-zA-Z]*?", Keyword_Octal, 1);

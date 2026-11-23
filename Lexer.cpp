@@ -185,18 +185,25 @@ Token *Lexer::fetchToken() {
     if (whitespaceSkip) {
         if (isspace(*buf))
             buf++;
+
+        while (*buf == 10)
+            buf++;
     }
 
     if (*buf == '\0')
         return nullptr;
 
-    auto valid = validConstantToken(buf);
+    auto valid = validVariableToken(buf);
     if (valid.first == -1) {
-        valid = validVariableToken(buf);
+        valid = validConstantToken(buf);
         if (valid.first == -1) {
-            printf("invalid character '%c' digit %d", *buf, *buf);
+            printf("invalid character '%c' digit %d\n", *buf, *buf);
             return nullptr;
         }
+    } else {
+        auto validconstant = validConstantToken(buf);
+        if (validconstant.second >= valid.second)
+            valid = validconstant;
     }
 
     std::string str;

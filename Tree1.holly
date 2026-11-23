@@ -1,0 +1,2 @@
+Declarator
+((uint64 *) a)[20]

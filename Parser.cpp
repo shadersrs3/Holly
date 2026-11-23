@@ -19,13 +19,13 @@ Parser::Parser() {
 }
 
 void Parser::addRule(ParserRule *r) {
-    rules.push_back(r);
+    rules.push_back(*r);
 }
 
 ParserRule *Parser::findRule(const std::string& rule) {
     for (auto& i : rules)
-        if (i->getName() == rule)
-            return i;
+        if (i.getName() == rule)
+            return &i;
     return nullptr;
 }
 
@@ -39,6 +39,7 @@ ParseTree *Parser::parse(const std::string& symbol, Lexer *l) {
     parseTree->production = symbol;
     parseTree->terminal = nullptr;
 
+    std::vector<ParseTree *> children;
     grammarLexer.setBuffer(symbol.c_str());
     t = grammarLexer.fetchToken();
     switch (t->id) {
@@ -75,7 +76,9 @@ ParseTree *Parser::parse(const std::string& symbol, Lexer *l) {
 
         for (auto& i : rule->getSyntax()) {
             bool success = true;
-            int idx = 0;
+            const char *buffer = l->getBuffer();
+
+            children.clear();
             for (auto& j : i) {
                 tree = parse(j, l);
                 if (!tree && !(j[0] == '#')) {
@@ -83,14 +86,20 @@ ParseTree *Parser::parse(const std::string& symbol, Lexer *l) {
                     break;
                 }
 
-                idx++;
-                parseTree->children.push_back(tree);
+                children.push_back(tree);
             }
 
             if (success) {
+                parseTree->children = children;
                 return parseTree;
             }
+
+            for (auto& i : children)
+                if (i) delete i;
+
+            l->setBuffer(buffer);
         }
+
         break;
     }
     case 2:

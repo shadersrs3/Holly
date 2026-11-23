@@ -10,7 +10,7 @@ struct Parser {
 private:
     Lexer grammarLexer;
     ParserKeywordCallback keywordCallback;
-    std::vector<ParserRule *> rules;
+    std::vector<ParserRule> rules;
 public:
     Parser();
     void addRule(ParserRule *r);
