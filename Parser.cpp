@@ -2,6 +2,8 @@
 
 #include "Parser.h"
 
+#include "HollyLanguage.h"
+
 void ParserRule::setName(const std::string& name) {
     this->name = name;
 }
@@ -49,11 +51,15 @@ ParseTree *Parser::parse(const std::string& symbol, Lexer *l) {
         if (!tok)
             return nullptr;
 
-        if (tok->id == keywordCallback(t->token.c_str() + 1)) {
+        int id = keywordCallback(t->token.c_str() + 1);
+        if (tok->id == id) {
             parseTree->production = symbol;
             parseTree->terminal = tok;
             return parseTree;
         } else {
+            if (-1 == id) {
+                printf("unimplemented token %s for parsing\n", t->token.c_str());
+            }
             l->setBuffer(buf);
         }
         delete parseTree;
@@ -94,12 +100,11 @@ ParseTree *Parser::parse(const std::string& symbol, Lexer *l) {
                 return parseTree;
             }
 
+
             for (auto& i : children)
                 if (i) delete i;
-
             l->setBuffer(buffer);
         }
-
         break;
     }
     case 2:

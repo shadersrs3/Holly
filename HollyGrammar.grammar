@@ -1,68 +1,74 @@
-; extra bullshit grammar
-
-
-TypeCast 2
-@OperatorKeyword_exprbegin Type PtrCast @OperatorKeyword_exprend
-@OperatorKeyword_exprbegin Type @OperatorKeyword_exprend
-
-PtrCast 2
-@OperatorKeyword_star PtrCast
-E
-
-DeclaratorSuffix 3
-@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend DeclaratorSuffix
-@OperatorKeyword_bracketstart Expr @OperatorKeyword_bracketend DeclaratorSuffix
-E
-
-Declarator 2
-Identifier DeclaratorSuffix
-@OperatorKeyword_star Declarator
-
-Identifier 3
 Name
-@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend
-TypeCast Expr
-
-Name 7
-@Keyword_Name
+AlphabeticalCharacters
 @Keyword_Octal
 @Keyword_Integer
 @Keyword_Hexadecimal
 @Keyword_FloatingPoint
 @Keyword_Multicharacter
 @Keyword_Singlecharacter
+--
 
-Type 10
-@ConstKeyword_int8
-@ConstKeyword_int16
-@ConstKeyword_int32
-@ConstKeyword_int64
-@ConstKeyword_uint8
-@ConstKeyword_uint16
-@ConstKeyword_uint32
-@ConstKeyword_uint64
-@ConstKeyword_void
+AlphabeticalCharacters
 @Keyword_Name
+--
 
-Declaration 2
-Type Declarator @OperatorKeyword_statementstart @OperatorKeyword_statementend
-Type Declarator @OperatorKeyword_endstmt
+expression
+	logicalOrExpr
+--
 
-Expr 1
-#Term TermList
+logicalOrExpr
+	logicalAndExpr @or_or logicalOrExpr
+	logicalAndExpr
+--
 
-Term 1
-Factor FactorList
+logicalAndExpr
+	comparisionExpr @and_and logicalAndExpr
+	comparisionExpr
+--
 
-TermList 3
-@OperatorKeyword_plus #Term TermList
-@OperatorKeyword_minus #Term TermList
-E
+comparisionExpr
+	bitwiseList @lt bitwiseList comparisionExpr
+	bitwiseList @gt bitwiseList comparisionExpr
+	bitwiseList @ge bitwiseList comparisionExpr
+	bitwiseList @le bitwiseList comparisionExpr
+	bitwiseList @eq bitwiseList comparisionExpr
+	bitwiseList @ne bitwiseList comparisionExpr
+	bitwiseList
+--
 
-Factor 2
-Declarator
-@OperatorKeyword_exprbegin Expr @OperatorKeyword_exprend
+bitwiseList
+	termList @and bitwiseList
+	termList @or bitwiseList
+	termList @xor bitwiseList
+	termList @shl bitwiseList
+	termList @shr bitwiseList
+	termList
+	E
+--
 
-FactorList 2
-@OperatorKeyword_star Factor FactorList
-E
+termList
+	@plus term termList
+	@minus term termList
+	term termList
+	E
+--
+
+term
+	factor factorList
+--
+
+factorList
+	@star factor factorList
+	@percent factor factorList
+	@slash factor factorList
+	E
+--
+
+factor
+Name
+@lparen expression @rparen
+@plus factor
+@minus factor
+@logical_not factor
+@bitwise_not factor
+--

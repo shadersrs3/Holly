@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include "Lexer.h"
 
@@ -24,11 +25,11 @@ void debug(ParseTree *tree, int depth = 0) {
     }
 }
 
-static void InitializeParserForHolly(Parser *p) {
+static void InitializeParserForHolly(Parser *p, const std::string& path) {
     std::fstream f;
     std::string str;
     int left = 0;
-    f.open("HollyGrammar.grammar", std::ios_base::in | std::ios_base::binary);
+    f.open(path, std::ios_base::in | std::ios_base::binary);
 
     Lexer grammarLexerForHolly;
     grammarLexerForHolly.enableWhitespaceSkip();
@@ -42,27 +43,67 @@ static void InitializeParserForHolly(Parser *p) {
         if (str[0] == ';')
             continue;
 
-        if (isspace(str[0]))
+        while (isspace(str[0])) {
+            str = str.substr(1);
             continue;
+        }
+
+        if (str.length() == 0)
+            continue;
+
+        if (str.length() >= 2 && str[0] == '-' && str[1] == '-') {
+            p->addRule(&rule);
+            left = 0;
+            continue;
+        }
 
         grammarLexerForHolly.setBuffer(str.c_str());
         if (left == 0) {
             rule = {};
             rule.setName(grammarLexerForHolly.fetchToken()->token);
-            left = std::atoi(grammarLexerForHolly.fetchToken()->token.c_str());
+            left = 1;
         } else {
             std::vector<std::string> rules;
             while (t = grammarLexerForHolly.fetchToken())
                 rules.push_back(t->token);
             rule.addSyntax(rules);
-            left--;
-            if (left == 0)
-                p->addRule(&rule);
         }
     }
 }
 
-static std::pair<std::string, std::vector<char>> readFile(const std::string& file) {
+
+static void InitializeLexerForHolly(Lexer *l, const std::string& path) {
+    std::fstream f;
+    std::string str;
+    int left = 0;
+    f.open(path, std::ios_base::in | std::ios_base::binary);
+    Lexer lex;
+    lex.enableWhitespaceSkip();
+    lex.assignConstantToken("E", 2);
+    lex.assignVariableToken("[\x21-\x7E]*", 0, 0);
+    size_t id = __hollyEnumeratorNames.size();
+    while (std::getline(f, str)) {
+        if (str[0] == '#')
+            continue;
+
+        if (isspace(str[0]))
+            continue;
+
+        lex.setBuffer(str.c_str());
+        Token *type = lex.fetchToken();
+        Token *keyword = lex.fetchToken();
+        if (auto id_ = FindHollyKeyword(type->token.c_str()); id_ != -1) {
+            __hollyEnumeratorNames.push_back({ id_, type->token, keyword->token });
+            l->assignConstantToken(keyword->token, id_);
+        } else {
+            __hollyEnumeratorNames.push_back({ (int)id, type->token, keyword->token });
+            l->assignConstantToken(keyword->token, (int)id);
+            id++;
+        }
+    }
+}
+
+static std::pair<std::string, std::vector<char>> readHollyFile(const std::string& file) {
     std::fstream f(file, std::ios_base::in | std::ios_base::binary);
     std::vector<char> buf;
     std::string debugtype;
@@ -82,11 +123,11 @@ static std::pair<std::string, std::vector<char>> readFile(const std::string& fil
 int main(int argc, char *argv[]) {
     Lexer l;
     Parser p;
-
-    InitializeLexerForHolly(&l);
-    InitializeParserForHolly(&p);
-    p.setKeywordCallback(findHollyKeyword);
-    auto test = readFile("Tree1.holly");
+    InitializeLexerForHollyStartup(&l);
+    InitializeParserForHolly(&p, "HollyGrammar.grammar");
+    InitializeLexerForHolly(&l, "HollyConstants.cnst");
+    p.setKeywordCallback(FindHollyKeyword);
+    auto test = readHollyFile("Tree1.holly");
     l.setBuffer(&test.second[0]);
     debug(p.parse(test.first, &l));
     return 0;

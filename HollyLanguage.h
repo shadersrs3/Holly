@@ -2,4 +2,4 @@
 
 #include "HollyKeyword.h"
 
-void InitializeLexerForHolly(Lexer *lexer);
+void InitializeLexerForHollyStartup(Lexer *lexer);

@@ -106,13 +106,32 @@ std::pair<int, int> Lexer::validVariableToken(const std::string& token) {
             std::string str = token.substr(sliced);
             int s = i->exec[j]->execute(str);
             sliced += s;
+            const char *ptr = token.c_str() + 1;
             // special case
             if (j == i->exec.size() - 1 && i->priority == -1) {
-
-                if (token.c_str()[sliced - 1] == token.c_str()[0])
+                const char c = token[0];
+                const char *str = ptr;
+                if (i->rule.c_str()[0] != c)
                     break;
-            }
 
+                while (*ptr != '\0' && *ptr != c) {
+                    if (*ptr == '\n') {
+                        printf("did not expected newline on %c", c);
+                        sliced = 0;
+                        valid = false;
+                        break;
+                    }
+
+                    if (*ptr == '\\') {
+                        ptr += 2;
+                    } else
+                        ptr++;
+                }
+
+                sliced = ptr - str + 2;
+                valid = true;
+                break;
+            }
             if (s != 0)
                 valid = true;
             else {
@@ -183,10 +202,7 @@ Token *Lexer::fetchToken() {
         return nullptr;
 
     if (whitespaceSkip) {
-        if (isspace(*buf))
-            buf++;
-
-        while (*buf == 10)
+        while (isspace(*buf))
             buf++;
     }
 
